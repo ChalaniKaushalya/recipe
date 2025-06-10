@@ -47,6 +47,9 @@ class _ViewProfilePageState extends State<ViewProfilePage> {
     controllers['email'] = TextEditingController(text: userStore.email);
 
     selectedLanguage = userStore.language ?? 'en';
+    if (!options.containsKey(selectedLanguage)) {
+      selectedLanguage = options.keys.first;
+    }
   }
 
   @override
