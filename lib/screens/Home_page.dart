@@ -99,6 +99,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
+      backgroundColor: Colors.white,
     );
   }
 
@@ -213,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         physics: AlwaysScrollableScrollPhysics(),
         child: Container(
-          height: MediaQuery.of(context).size.height,
           padding: const EdgeInsets.all(16.0),
           color: Colors.white,
           child: Column(
