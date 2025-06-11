@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class RecipeCard extends StatefulWidget {
   final Map<String, dynamic> recipies;
@@ -17,7 +19,7 @@ class RecipeCard extends StatefulWidget {
 }
 
 class _RecipeCardState extends State<RecipeCard> {
-  late bool isFavorite;
+  bool isFavorite = false;
 
   @override
   void initState() {
@@ -28,7 +30,6 @@ class _RecipeCardState extends State<RecipeCard> {
   @override
   void didUpdateWidget(covariant RecipeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // When the widget updates, check if the favorite status has changed
     if (oldWidget.recipies['favorite'] != widget.recipies['favorite']) {
       setState(() {
         isFavorite = widget.recipies['favorite'] ?? false;
@@ -48,35 +49,51 @@ class _RecipeCardState extends State<RecipeCard> {
           .update({'favorite': isFavorite});
     } catch (e) {
       print("Error updating favorite status: $e");
-      // If update fails, revert the local change.
       setState(() {
         isFavorite = !isFavorite;
       });
     }
   }
 
+  Uint8List? _decodeBase64Image(String? imageData) {
+    if (imageData == null || !imageData.contains(',')) return null;
+    try {
+      final base64Str = imageData.split(',').last;
+      return base64Decode(base64Str);
+    } catch (e) {
+      print("Error decoding image: $e");
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final imageBytes = _decodeBase64Image(widget.recipies['image']);
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
+            // Image Section
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  widget.recipies['image'],
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey[300],
-                    child: Center(child: Icon(Icons.image)),
-                  ),
-                ),
+                child: imageBytes != null
+                    ? Image.memory(
+                        imageBytes,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: const Center(child: Icon(Icons.image)),
+                      ),
               ),
             ),
+
+            // Title and Favorite
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -84,8 +101,8 @@ class _RecipeCardState extends State<RecipeCard> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.recipies['title'],
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      widget.recipies['title'] ?? 'No Title',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                   IconButton(

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:recipeapplication/services/locale_provider.dart';
 import 'package:recipeapplication/stores/user-store.dart';
 import '../l10n/app_localizations.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class ViewProfilePage extends StatefulWidget {
   @override
@@ -64,6 +66,17 @@ class _ViewProfilePageState extends State<ViewProfilePage> {
     setState(() {
       isEditing[field] = !isEditing[field]!;
     });
+  }
+
+  Uint8List? _decodeBase64Image(String? imageData) {
+    if (imageData == null || !imageData.contains(',')) return null;
+    try {
+      final base64Str = imageData.split(',').last;
+      return base64Decode(base64Str);
+    } catch (e) {
+      print("Error decoding image: $e");
+      return null;
+    }
   }
 
   Future<void> saveProfileChanges() async {
@@ -215,6 +228,7 @@ class _ViewProfilePageState extends State<ViewProfilePage> {
   @override
   Widget build(BuildContext context) {
     final userStore = Provider.of<UserStore>(context);
+    Uint8List? imageBytes = _decodeBase64Image(userStore.profilePicture);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -244,7 +258,10 @@ class _ViewProfilePageState extends State<ViewProfilePage> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundImage: NetworkImage(userStore.profilePicture!),
+                    backgroundImage: imageBytes != null
+                        ? MemoryImage(imageBytes)
+                        : NetworkImage(userStore.profilePicture!)
+                              as ImageProvider,
                     backgroundColor: Colors.grey[300],
                   ),
                   SizedBox(height: 20),

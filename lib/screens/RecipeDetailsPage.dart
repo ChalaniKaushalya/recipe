@@ -7,6 +7,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import '../l10n/app_localizations.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class RecipeDetailsPage extends StatefulWidget {
   final String docId;
@@ -180,11 +182,31 @@ Shared via MyRecipeApp
           if (!snapshot.hasData || snapshot.data == null) {
             return Scaffold(body: Center(child: CircularProgressIndicator()));
           }
+          Uint8List? _decodeBase64Image(String? imageData) {
+            if (imageData == null || !imageData.contains(',')) return null;
+            try {
+              final base64Str = imageData.split(',').last;
+              return base64Decode(base64Str);
+            } catch (e) {
+              print("Error decoding image: $e");
+              return null;
+            }
+          }
 
           var data = snapshot.data!.data() as Map<String, dynamic>;
           String recipeName = data['title'] ?? 'Unnamed Recipe';
           String recipeDescription = data['description'] ?? '';
           String recipeImage = data['image'] ?? '';
+          Uint8List? imageBytes = _decodeBase64Image(recipeImage);
+
+          ImageProvider imageProvider;
+
+          if (imageBytes != null) {
+            imageProvider = MemoryImage(imageBytes);
+          } else {
+            imageProvider = NetworkImage(recipeImage);
+          }
+
           List<String> recipeIngredients =
               (data['recipeIngredients'] as List<dynamic>?)
                   ?.map((item) => item.toString())
@@ -232,8 +254,8 @@ Shared via MyRecipeApp
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
-                      recipeImage,
+                    child: Image(
+                      image: imageProvider,
                       fit: BoxFit.cover,
                       height: 250,
                       width: double.infinity,

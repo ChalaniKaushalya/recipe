@@ -9,6 +9,8 @@ import 'favorite_list_page.dart';
 import 'view_profile_page.dart';
 import 'recipedetailspage.dart';
 import '../l10n/app_localizations.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class HomePage extends StatefulWidget {
   final String userName;
@@ -63,6 +65,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final userStore = Provider.of<UserStore>(context);
+    Uint8List? _decodeBase64Image(String? imageData) {
+      if (imageData == null || !imageData.contains(',')) return null;
+      try {
+        final base64Str = imageData.split(',').last;
+        return base64Decode(base64Str);
+      } catch (e) {
+        print("Error decoding image: $e");
+        return null;
+      }
+    }
+
+    Uint8List? imageBytes = _decodeBase64Image(widget.userPicture);
 
     return Scaffold(
       appBar: _selectedIndex == 0
@@ -72,7 +86,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               title: Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: NetworkImage(widget.userPicture),
+                    backgroundImage: imageBytes != null
+                        ? MemoryImage(imageBytes)
+                        : NetworkImage(userStore.profilePicture!)
+                              as ImageProvider,
                   ),
                   SizedBox(width: 10),
                   Text(
